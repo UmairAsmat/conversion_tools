@@ -1,8 +1,6 @@
 import os
-import time
-import webbrowser
-import pyautogui
-import pyperclip
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 """
 This script converts all HTML files in the 'htmls_files' directory to text files in the 'text_files' directory by:
@@ -25,20 +23,24 @@ if not os.path.exists(TEXT_DIR):
 
 html_files = [f for f in os.listdir(HTML_DIR) if f.lower().endswith('.html') or f.lower().endswith('.htm')]
 
+# Set up headless Chrome
+chrome_options = Options()
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+
+driver = webdriver.Chrome(options=chrome_options)
+
 for html_file in html_files:
     html_path = os.path.abspath(os.path.join(HTML_DIR, html_file))
+    file_url = f'file:///{html_path}'
     print(f"Processing: {html_file}")
-    webbrowser.open(f'file:///{html_path}')
-    time.sleep(3)  # Wait for browser to open and load
+    driver.get(file_url)
 
-    # Select all and copy
-    pyautogui.hotkey('ctrl', 'a')
-    time.sleep(0.5)
-    pyautogui.hotkey('ctrl', 'c')
-    time.sleep(0.5)
-
-    # Get clipboard content
-    text = pyperclip.paste()
+    # Get the visible text of the page
+    body = driver.find_element("tag name", "body")
+    text = body.text
 
     # Save to text file
     txt_file = os.path.splitext(html_file)[0] + '.txt'
@@ -46,6 +48,6 @@ for html_file in html_files:
     with open(txt_path, 'w', encoding='utf-8') as f:
         f.write(text)
     print(f"Saved: {txt_file}\n")
-    time.sleep(1)  # Optional: wait before next file
 
+driver.quit()
 print("All files processed.")
